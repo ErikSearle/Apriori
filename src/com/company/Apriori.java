@@ -24,12 +24,18 @@ public class Apriori {
         list, if the number of hits is greater than the minimum threshold, add that set of items to a new item set
         called frequentPatterns
          */
+        System.out.println(transactions.size());
+        System.out.println(itemSet.size());
         for(TreeSet<Integer> item : itemSet){
             int count = 0;
             for(TreeSet<Integer> transaction : transactions){
                 if(transaction.containsAll(item)) count++;
+                if(count >= minimumThreshold){
+                    frequentPatterns.add(item);
+                    break;
+                }
             }
-            if(count > minimumThreshold) frequentPatterns.add(item);
+
         }
 
         /*
