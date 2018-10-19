@@ -8,6 +8,9 @@ import java.util.function.Consumer;
 public class Main {
 
     public static void main(String[] args) {
+        System.out.println("Program started");
+        long startTime = System.currentTimeMillis();
+
 	    String inputFile = args[0];
 	    String minimumThreshold = args[1];
 	    Scanner scan = null;
@@ -20,14 +23,11 @@ public class Main {
 	        System.exit(1);
         }
 
-        //read the first line of the file denoting the number of transactions. The second line here just jumps us past
-        //the rest of the empty space on the first line
+        //read the first line of the file denoting the number of transactions.
         int numTransactions = scan.nextInt();
-	    scan.nextLine();
 
-	    //create a transaction database to be filled later. Individual transactions are Treesets to ensure that items
-        // are in sorted order. The list of transactions is a linked hash set to maintain order of insertion
-        LinkedHashSet<TreeSet<Integer>> transactionData = new LinkedHashSet<>();
+	    //create a transaction database to be filled later.
+        int[][] transactions = new int[numTransactions][];
 
 
         //Potential itemsets are first initialized as a treeset of tree sets. This is to ensure that we only test for
@@ -53,32 +53,40 @@ public class Main {
 
 
         //Read the file and put transactions into the transaction set. Simultaneously put items into the item set.
-        long startTime = System.currentTimeMillis();
-	    while(scan.hasNextLine()){
-	        String line = scan.nextLine();
-	        String[] lineData = line.split("\\t");
-	        String[] transData = lineData[2].split(" ");
-	        TreeSet<Integer> transaction = new TreeSet<>();
-	        for(String datum : transData){
-	            if(!datum.equals("")){
-	                int item = Integer.valueOf(datum);
-	                transaction.add(item);
-	                TreeSet<Integer> singleton = new TreeSet<>();
-	                singleton.add(item);
-	                itemSet.add(singleton);
-                }
+	    while(scan.hasNext()){
+	        int transNumber = scan.nextInt() - 1;
+	        int numItems = scan.nextInt();
+	        transactions[transNumber] = new int[numItems];
+	        for(int i=0; i<numItems; i++){
+	            transactions[transNumber][i] = scan.nextInt();
+	            TreeSet<Integer> potentialItem = new TreeSet<>();
+	            potentialItem.add(transactions[transNumber][i]);
+	            itemSet.add(potentialItem);
             }
-            transactionData.add(transaction);
         }
-        System.out.println(System.currentTimeMillis()-startTime + "millis");
 
+
+	    //Sort the transactions
+	    Arrays.sort(transactions, new Comparator<int[]>() {
+            @Override
+            public int compare(int[] ints, int[] t1) {
+                for(int i=0; i<ints.length && i<t1.length; i++){
+                    if(ints[i] > t1[i]) return 1;
+                    else if(ints[i] < t1[i]) return -1;
+                }
+                if(t1.length > ints.length) return -1;
+                else if(ints.length > t1.length) return 1;
+                else return 0;
+            }
+        });
+	    System.out.println("File read and sorted after " + (System.currentTimeMillis()-startTime) + " millis");
 
         //Convert the itemset to a linked hash set as explained above
         LinkedHashSet<TreeSet<Integer>> linkedItemSet = new LinkedHashSet<>(itemSet);
 
         //Generate frequent patterns
         LinkedHashSet<TreeSet<Integer>> frequentPatterns =
-                Apriori.generateFrequentPatterns(transactionData, linkedItemSet,
+                Apriori.generateFrequentPatterns(transactions, linkedItemSet,
                         processMinThreshold(minimumThreshold, numTransactions));
 
         //Print frequent patterns
@@ -102,13 +110,14 @@ public class Main {
                 System.out.println("Invalid percentage. Percentage must be between 0 and 100.");
                 System.exit(1);
             }
-            return (int) (((float) numTransactions)*(minThreshPercentage/100));
+            return (int) Math.ceil(((float) numTransactions)*(minThreshPercentage/100));
         }
         int minThreshNumber = Integer.valueOf(minThresh);
         if(minThreshNumber < 0 || minThreshNumber > numTransactions){
             System.out.println("Invalid minimum threshold. Threshold must be betwen 0 and " + numTransactions);
             System.exit(1);
         }
+        System.out.println(minThreshNumber);
         return minThreshNumber;
     }
 
