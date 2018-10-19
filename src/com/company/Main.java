@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
-import java.util.function.Consumer;
 
 public class Main {
 
@@ -35,29 +34,15 @@ public class Main {
         }
 
 	    //create a transaction database to be filled later.
-        LinkedList<LinkedHashSet<Integer>> transactions = new LinkedList<>();
+        LinkedList<TreeSet<Integer>> transactions = new LinkedList<>();
 
 
-        //Potential itemsets are first initialized as a treeset of tree sets. This is to ensure that we only test for
-        //items that actually exist in our database, and everything begins in sorted order. After this initialization,
-        // we will convert the outer treeset to a linked hashset because the apriori algorithm will always maintain
-        // sorted order and a linkedhashset will be faster than a treeset for insertions. The following comparator
-        // allows us to sort treesets based on their items. It is not a complete comparator that could be used
-        // elsewhere, but is perfectly sufficient to our needs.
-//        TreeSet<TreeSet<Integer>> itemSet = new TreeSet<>(new Comparator<TreeSet<Integer>>() {
-//            @Override
-//            public int compare(TreeSet<Integer> t0, TreeSet<Integer> t1) {
-//
-//            }
-//        });
-
-
-        //Read the file and put transactions into the transaction set. Simultaneously put items into the item set.
+        //Read the file and put transactions into the transaction set
         try {
             String line = fileReader.readLine();
             while (line != null) {
                 String[] splitLine = line.split("\\s+");
-                LinkedHashSet<Integer> trans = new LinkedHashSet<>();
+                TreeSet<Integer> trans = new TreeSet<>();
                 for(int i=2; i<splitLine.length; i++){
                     trans.add(Integer.valueOf(splitLine[i]));
                 }
@@ -69,30 +54,20 @@ public class Main {
             System.exit(1);
         }
 
-
-        System.out.println((System.currentTimeMillis()-startTime));
 	    //Sort the transactions
-	    transactions.sort(new LinkedHashSetComparator());
+	    transactions.sort(new TreeSetComparator());
 	    System.out.println("File read and sorted after " + (System.currentTimeMillis()-startTime) + " millis");
 
 	    TreeMap<int[], Integer> frequentPatterns = Apriori.generateFrequentPatterns(transactions, processMinThreshold(minimumThreshold, numTransactions));
-//
-//        //Generate frequent patterns
-//        LinkedHashSet<TreeSet<Integer>> frequentPatterns =
-//                Apriori.generateFrequentPatterns(transactions, linkedItemSet,
-//                        processMinThreshold(minimumThreshold, numTransactions));
-//
-//        //Print frequent patterns
-//        frequentPatterns.forEach(new Consumer<TreeSet<Integer>>() {
-//            @Override
-//            public void accept(TreeSet<Integer> integers) {
-//                StringBuilder sb = new StringBuilder();
-//                for(Integer integer : integers){
-//                    sb.append(integer).append(" ");
-//                }
-//                System.out.println(sb.toString());
-//            }
-//        });
+	    TreeMap<int[], Integer> reSortedPatterns = new TreeMap<>(new IntArrayComparatorSizeWise());
+	    reSortedPatterns.putAll(frequentPatterns);
+
+	    System.out.println("Frequent patterns found in " + (System.currentTimeMillis()-startTime) + " millis");
+        //Print frequent patterns
+        for(int[] fp: reSortedPatterns.keySet()){
+            for(int i: fp) System.out.print(i + " ");
+            System.out.print("\n");
+        }
     }
 
     private static int processMinThreshold(String minThresh, int numTransactions){

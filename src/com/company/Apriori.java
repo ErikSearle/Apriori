@@ -4,9 +4,9 @@ import java.util.*;
 
 public class Apriori {
 
-    public static TreeMap<int[], Integer> generateFrequentPatterns(LinkedList<LinkedHashSet<Integer>> transactions, int minimumThreshold){
-        TreeMap<int[], Integer> singletons = new TreeMap<>(new IntArrayComparator());
-        for(LinkedHashSet<Integer> transaction: transactions){
+    public static TreeMap<int[], Integer> generateFrequentPatterns(LinkedList<TreeSet<Integer>> transactions, int minimumThreshold){
+        TreeMap<int[], Integer> singletons = new TreeMap<>(new IntArrayComparatorItemWise());
+        for(TreeSet<Integer> transaction: transactions){
             for(Integer item: transaction){
                 int[] itemSet = new int[1];
                 itemSet[0] = item;
@@ -14,9 +14,8 @@ public class Apriori {
                 if(currentVal != null) singletons.put(itemSet, ++currentVal);
             }
         }
-        System.out.println(singletons.lastKey()[0]);
         pruneInfrequentSets(singletons, minimumThreshold);
-        System.out.println(singletons.lastKey()[0]);
+        singletons.putAll(generateFrequentPatterns(transactions, CandidateGenerator.generate(singletons), minimumThreshold));
         return singletons;
     }
 
@@ -29,34 +28,33 @@ public class Apriori {
      *                         a percentage value
      * @return The set of frequent patterns found through recursive analysis
      */
-    private static LinkedHashSet<TreeSet<Integer>> generateFrequentPatterns(int[][] transactions,
-                                                                           LinkedHashSet<TreeSet<Integer>> itemSets,
+    private static Map<int[], Integer> generateFrequentPatterns(LinkedList<TreeSet<Integer>> transactions,
+                                                                           TreeMap<int[], Integer> itemSets,
                                                                            int minimumThreshold){
-        System.out.println("Starting loop");
 
-        LinkedHashSet<TreeSet<Integer>> frequentPatterns = new LinkedHashSet<>();
+        TreeMap<int[], Integer> frequentPatterns = new TreeMap<>(new IntArrayComparatorItemWise());
         /*
         Test each item in the item set against the list of transactions and at the end of run through the transactions
         list, if the number of hits is greater than the minimum threshold, add that set of items to a new item set
         called frequentPatterns
          */
-        for(TreeSet<Integer> itemSet : itemSets){
-            if(itemSet.first() % 1000 == 0) {
-                System.out.println(itemSet.first());
-            }
+        for(int[] itemSet: itemSets.keySet()){
             int count = 0;
-            for(int[] transaction: transactions){
-                if(transaction[0] > itemSet.first()) break;
-                if(transaction[transaction.length - 1] < itemSet.last()) continue;
-                if(transactionContainsItemSet(itemSet, transaction)) count++;
+            for(TreeSet<Integer> transaction: transactions){
+                if(transaction.first() > itemSet[0]) break;
+                if(transaction.last() < itemSet[itemSet.length-1]) continue;
+                for(int i=0; i<itemSet.length; i++){
+                    if(!transaction.contains(itemSet[i])) break;
+                    if(i == itemSet.length-1) count++;
+                }
             }
-            if(count >= minimumThreshold) frequentPatterns.add(itemSet);
+            if(count > minimumThreshold) frequentPatterns.put(itemSet, count);
         }
 
         /*
         Generate new candidates based on the frequentPatterns
          */
-        LinkedHashSet<TreeSet<Integer>> newCandidates = CandidateGenerator.generate(frequentPatterns);
+        TreeMap<int[], Integer> newCandidates = CandidateGenerator.generate(frequentPatterns);
 
         /*
         If there are no new candidates, return the frequentPatterns only
@@ -67,27 +65,10 @@ public class Apriori {
         Else recursively call this function with the new set of candidates. Add the frequentPatterns to the set returned
         from the recursive call
          */
-        frequentPatterns.addAll(generateFrequentPatterns(transactions, newCandidates, minimumThreshold));
+        frequentPatterns.putAll(generateFrequentPatterns(transactions, newCandidates, minimumThreshold));
         return frequentPatterns;
     }
 
-    private static boolean transactionContainsItemSet(TreeSet<Integer> itemSet, int[] transaction){
-        Iterator<Integer> items = itemSet.iterator();
-        int nextLoopStartsAt = 0;
-        while(items.hasNext()){
-            int item = items.next();
-            for(int i=nextLoopStartsAt; i<transaction.length; i++){
-                if(transaction[i] == item){
-                    nextLoopStartsAt = i+1;
-                    break;
-                }
-                else if(transaction[i] > item) return false;
-                else if(i == transaction.length - 1) return false;
-            }
-            if(items.hasNext() && nextLoopStartsAt >= transaction.length) return false;
-        }
-        return true;
-    }
 
     private static void pruneInfrequentSets(TreeMap<int[], Integer> tree, int minThresh){
         ArrayList<int[]> keysToRemove = new ArrayList<>();

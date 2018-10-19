@@ -2,16 +2,16 @@ package com.company;
 
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
+import java.util.TreeSet;
 
-public class LinkedHashSetComparator implements Comparator<LinkedHashSet<Integer>> {
+public class TreeSetComparator implements Comparator<TreeSet<Integer>> {
 
-    public LinkedHashSetComparator(){
+    public TreeSetComparator(){
 
     }
 
     @Override
-    public int compare(LinkedHashSet<Integer> integers, LinkedHashSet<Integer> t1) {
+    public int compare(TreeSet<Integer> integers, TreeSet<Integer> t1) {
         Iterator<Integer> firstIterator = integers.iterator();
         Iterator<Integer> secondIterator = t1.iterator();
         while(firstIterator.hasNext() && secondIterator.hasNext()){
