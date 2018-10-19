@@ -1,10 +1,24 @@
 package com.company;
 
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Apriori {
+
+    public static TreeMap<int[], Integer> generateFrequentPatterns(LinkedList<LinkedHashSet<Integer>> transactions, int minimumThreshold){
+        TreeMap<int[], Integer> singletons = new TreeMap<>(new IntArrayComparator());
+        for(LinkedHashSet<Integer> transaction: transactions){
+            for(Integer item: transaction){
+                int[] itemSet = new int[1];
+                itemSet[0] = item;
+                Integer currentVal = singletons.put(itemSet, 1);
+                if(currentVal != null) singletons.put(itemSet, ++currentVal);
+            }
+        }
+        System.out.println(singletons.lastKey()[0]);
+        pruneInfrequentSets(singletons, minimumThreshold);
+        System.out.println(singletons.lastKey()[0]);
+        return singletons;
+    }
 
     /**
      *
@@ -15,7 +29,7 @@ public class Apriori {
      *                         a percentage value
      * @return The set of frequent patterns found through recursive analysis
      */
-    public static LinkedHashSet<TreeSet<Integer>> generateFrequentPatterns(int[][] transactions,
+    private static LinkedHashSet<TreeSet<Integer>> generateFrequentPatterns(int[][] transactions,
                                                                            LinkedHashSet<TreeSet<Integer>> itemSets,
                                                                            int minimumThreshold){
         System.out.println("Starting loop");
@@ -73,5 +87,13 @@ public class Apriori {
             if(items.hasNext() && nextLoopStartsAt >= transaction.length) return false;
         }
         return true;
+    }
+
+    private static void pruneInfrequentSets(TreeMap<int[], Integer> tree, int minThresh){
+        ArrayList<int[]> keysToRemove = new ArrayList<>();
+        for(int[] key: tree.keySet()){
+            if(tree.get(key) < minThresh) keysToRemove.add(key);
+        }
+        for(int[] key: keysToRemove) tree.remove(key);
     }
 }
