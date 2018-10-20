@@ -1,15 +1,11 @@
 package com.company;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 public class Main {
 
     public static void main(String[] args) {
-        System.out.println("Program started");
         long startTime = System.currentTimeMillis();
 
 	    String inputFile = args[0];
@@ -56,20 +52,43 @@ public class Main {
 
 	    //Sort the transactions
 	    transactions.sort(new TreeSetComparator());
-	    System.out.println("File read and sorted after " + (System.currentTimeMillis()-startTime) + " millis");
 
-	    TreeMap<int[], Integer> frequentPatterns = Apriori.generateFrequentPatterns(transactions, processMinThreshold(minimumThreshold, numTransactions));
-	    TreeMap<int[], Integer> reSortedPatterns = new TreeMap<>(new IntArrayComparatorSizeWise());
+	    TreeMap<Integer[], Integer> frequentPatterns = Apriori.generateFrequentPatterns(transactions, processMinThreshold(minimumThreshold, numTransactions));
+	    TreeMap<Integer[], Integer> reSortedPatterns = new TreeMap<>(new IntArrayComparatorSizeWise());
 	    reSortedPatterns.putAll(frequentPatterns);
 
+	    System.out.println("|FPs| = " + reSortedPatterns.size());
 	    System.out.println("Frequent patterns found in " + (System.currentTimeMillis()-startTime) + " millis");
-        //Print frequent patterns
-        for(int[] fp: reSortedPatterns.keySet()){
-            for(int i: fp) System.out.print(i + " ");
-            System.out.print("\n");
+
+
+        //Print frequent patterns to file
+        FileWriter writer = null;
+        try {
+            writer = new FileWriter(new File("MiningResult.txt"));
+        } catch (IOException e){
+            System.out.println("Unable to open output file");
+            System.exit(1);
+        }
+        try {
+            writer.write("|FPs| = " + reSortedPatterns.size() + "\n");
+            for (Integer[] fp : reSortedPatterns.keySet()) {
+                for (int i : fp) writer.write(i + " ");
+                writer.write(": " + reSortedPatterns.get(fp) + "\n");
+            }
+            writer.close();
+        } catch(IOException e){
+            System.out.println("Unable to write to output file");
+            System.exit(1);
         }
     }
 
+    /**
+     * A helper method to determine the min threshold. If teh min threshold is passed as a percentage, it determines
+     * what the corresponding int is. Otherwise it just returns the original value
+     * @param minThresh The String passed in from teh command line
+     * @param numTransactions The total number of transactions
+     * @return the integer denoting the minimum support threshold
+     */
     private static int processMinThreshold(String minThresh, int numTransactions){
         if(minThresh.charAt(minThresh.length()-1) == '%'){
             String minThreshNumbersOnly = minThresh.substring(0, minThresh.length()-1);
@@ -85,7 +104,6 @@ public class Main {
             System.out.println("Invalid minimum threshold. Threshold must be betwen 0 and " + numTransactions);
             System.exit(1);
         }
-        System.out.println(minThreshNumber);
         return minThreshNumber;
     }
 

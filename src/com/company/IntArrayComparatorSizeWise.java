@@ -2,12 +2,12 @@ package com.company;
 
 import java.util.Comparator;
 
-public class IntArrayComparatorSizeWise implements Comparator<int[]> {
+public class IntArrayComparatorSizeWise implements Comparator<Integer[]> {
 
     public IntArrayComparatorSizeWise(){}
 
     @Override
-    public int compare(int[] ints, int[] t1) {
+    public int compare(Integer[] ints, Integer[] t1) {
         if(ints.length > t1.length) return 1;
         if(t1.length > ints.length) return -1;
 
